@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Truth or Dare</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#0f1724;color:#f0f6ff;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:10px}
+    .page{display:none;width:100%;max-width:500px;padding:20px;background:#162338;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.6);animation:fade .3s ease-in-out}
+    .page.active{display:block}
+    h1{font-size:clamp(18px,5vw,24px);margin-bottom:16px;text-align:center}
+    p{text-align:center;font-size:clamp(14px,4vw,16px);}
+    button{width:100%;padding:14px;margin:8px 0;background:#06b6d4;color:#001219;border:none;border-radius:12px;cursor:pointer;font-weight:bold;font-size:clamp(14px,4vw,16px);transition:.2s}
+    button:hover{background:#0891b2}
+    button:active{transform:scale(.97)}
+    .result{padding:16px;margin:16px 0;background:#1e2a44;border-radius:12px;text-align:center;font-size:clamp(14px,4vw,16px)}
+    @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</head>
+<body>
+
+  <!-- Page 1: Welcome -->
+  <div id="page1" class="page active">
+    <h1 id="welcomeText">Welcome</h1>
+    <button id="startBtn">Start Game</button>
+  </div>
+
+  <!-- Page 2: Choose Truth or Dare -->
+  <div id="page2" class="page">
+    <h1 id="currentPlayer">Player</h1>
+    <p>Choose:</p>
+    <button id="truthChoice">Truth</button>
+    <button id="dareChoice">Dare</button>
+  </div>
+
+  <!-- Page 3: Truth -->
+  <div id="page3" class="page">
+    <h1 id="truthPlayer">Player</h1>
+    <p>Spin the wheel to get a Truth</p>
+    <button id="spinTruth">Spin Wheel</button>
+    <div id="truthResult" class="result"></div>
+    <button id="truthDone" style="display:none">Done</button>
+  </div>
+
+  <!-- Page 4: Dare -->
+  <div id="page4" class="page">
+    <h1 id="darePlayer">Player</h1>
+    <p>Spin the wheel to get a Dare</p>
+    <button id="spinDare">Spin Wheel</button>
+    <div id="dareResult" class="result"></div>
+    <button id="dareDone" style="display:none">Done</button>
+  </div>
+
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    const truths=[
+      "What is your biggest fear that you’ve never told anyone?",
+      "Have you ever had a crush on someone in this room? If so, who?",
+      "What’s the most embarrassing thing you’ve ever done in public?",
+      "If you could change one thing about your life, what would it be?",
+      "What’s a secret talent you have that no one knows about?"
+    ];
+    const dares=[
+      "Dance like nobody's watching for one minute.",
+      "Try to lick your elbow.",
+      "Speak in an accent of your choice for the next three rounds.",
+      "Text a random contact in your phone and tell them you miss them.",
+      "Do your best impression of a celebrity until someone guesses who you are."
+    ];
+
+    let players=[];
+    let currentIndex=0;
+
+    // Detect Telegram User
+    let tg = window.Telegram ? window.Telegram.WebApp : null;
+    let userName = "Player 1";
+    if(tg && tg.initDataUnsafe && tg.initDataUnsafe.user){
+      userName = tg.initDataUnsafe.user.first_name || tg.initDataUnsafe.user.username || "Player 1";
+      tg.expand(); // fullscreen inside Telegram
+    }
+    document.getElementById("welcomeText").textContent = "Welcome, " + userName;
+
+    function showPage(id){
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function pickAndRemove(arr){
+      if(arr.length===0) return null;
+      const i=Math.floor(Math.random()*arr.length);
+      return arr.splice(i,1)[0];
+    }
+
+    document.getElementById('startBtn').onclick=()=>{
+      players=[userName,"Friend"]; // one from Telegram, second placeholder
+      currentIndex=0;
+      document.getElementById('currentPlayer').textContent=players[currentIndex];
+      showPage('page2');
+    };
+
+    document.getElementById('truthChoice').onclick=()=>{
+      document.getElementById('truthPlayer').textContent=players[currentIndex];
+      document.getElementById('truthResult').textContent='';
+      document.getElementById('truthDone').style.display='none';
+      showPage('page3');
+    };
+    document.getElementById('dareChoice').onclick=()=>{
+      document.getElementById('darePlayer').textContent=players[currentIndex];
+      document.getElementById('dareResult').textContent='';
+      document.getElementById('dareDone').style.display='none';
+      showPage('page4');
+    };
+
+    document.getElementById('spinTruth').onclick=()=>{
+      const item=pickAndRemove(truths)||'No more truths left.';
+      document.getElementById('truthResult').textContent=item;
+      document.getElementById('truthDone').style.display='block';
+    };
+    document.getElementById('spinDare').onclick=()=>{
+      const item=pickAndRemove(dares)||'No more dares left.';
+      document.getElementById('dareResult').textContent=item;
+      document.getElementById('dareDone').style.display='block';
+    };
+
+    function nextPlayer(){
+      currentIndex=(currentIndex+1)%players.length;
+      document.getElementById('currentPlayer').textContent=players[currentIndex];
+      showPage('page2');
+    }
+
+    document.getElementById('truthDone').onclick=nextPlayer;
+    document.getElementById('dareDone').onclick=nextPlayer;
+  </script>
+</body>
+</html>
